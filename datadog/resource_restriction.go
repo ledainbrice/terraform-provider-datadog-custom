@@ -109,6 +109,7 @@ func resourceDatadogUpdate(ctx context.Context, d *schema.ResourceData, m interf
 				Id: role["role_id"].(string),
 			})
 		}
+
 		err := cl.UpdateRestrictionQuery(restriction_id, query, role_ids)
 		if err != nil {
 			return diag.FromErr(err)

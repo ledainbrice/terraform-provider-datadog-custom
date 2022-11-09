@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
-	"strings"
+	"strconv"
+	"time"
 )
 
 type Role struct {
@@ -24,31 +27,35 @@ func flatRoles(roles []Role) []string {
 	return res
 }
 
-func CreateRestrictionRoleId(restriction_id string, role_id string) string {
-	return fmt.Sprintf("%s#%s", restriction_id, role_id)
-}
+// func CreateRestrictionRoleId(restriction_id string, role_id string) string {
+// 	return fmt.Sprintf("%s#%s", restriction_id, role_id)
+// }
 
-func GetRoleIdFromRestrictionRoleId(restriction_role_id string) string {
-	return strings.Split(restriction_role_id, "#")[1]
-}
+// func GetRoleIdFromRestrictionRoleId(restriction_role_id string) string {
+// 	return strings.Split(restriction_role_id, "#")[1]
+// }
 
-func GetRestrictionIdFromRestrictionRoleId(restriction_role_id string) string {
-	return strings.Split(restriction_role_id, "#")[0]
-}
-func (cl *ClientDatadog) GetRestrictionRole(restriction_role_id string) (Role, error) {
+// func GetRestrictionIdFromRestrictionRoleId(restriction_role_id string) string {
+// 	return strings.Split(restriction_role_id, "#")[0]
+// }
+// func (cl *ClientDatadog) GetRestrictionRole(restriction_role_id string) (Role, error) {
 
-	restriction_id := GetRestrictionIdFromRestrictionRoleId(restriction_role_id)
-	restrictions, err := cl.ReadRestrictionRoles(restriction_id)
-	if err != nil {
-		return Role{}, err
-	}
-	for _, restriction := range restrictions {
-		if restriction.Id == "id" {
-			return restriction, nil
-		}
-	}
+// 	restriction_id := GetRestrictionIdFromRestrictionRoleId(restriction_role_id)
+// 	restrictions, err := cl.ReadRestrictionRoles(restriction_id)
+// 	if err != nil {
+// 		return Role{}, err
+// 	}
+// 	for _, restriction := range restrictions {
+// 		if restriction.Id == "id" {
+// 			return restriction, nil
+// 		}
+// 	}
 
-	return Role{}, errors.New("restriction not found")
+// 	return Role{}, errors.New("restriction not found")
+// }
+
+func check2xx(status int) bool {
+	return status < 300 && status > 199
 }
 
 func (cl *ClientDatadog) ReadRestrictionRoles(restriction_id string) ([]Role, error) {
@@ -82,6 +89,8 @@ func (cl *ClientDatadog) ReadRestrictionRoles(restriction_id string) ([]Role, er
 		}
 		aux = append(aux, role)
 	}
+	time.Sleep(8 * time.Second)
+
 	return aux, nil
 }
 
@@ -106,6 +115,20 @@ func (cl *ClientDatadog) CreateRestrictionRole(restriction_id string, role_id st
 	}
 	defer r.Body.Close()
 
+	status := r.StatusCode
+	responseData, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+
+	responseString := string(responseData)
+	log.Printf("[INFO] '%s'", responseString)
+	log.Printf("[INFO] " + strconv.Itoa(status))
+	if !check2xx(r.StatusCode) {
+		return errors.New("[CreateRestrictionRole] Request status: " + strconv.Itoa(status) + " , response: " + responseString)
+	}
+	time.Sleep(8 * time.Second)
+
 	return nil
 }
 
@@ -127,6 +150,19 @@ func (cl *ClientDatadog) DeleteRestrictionRole(restriction_id string, role_id st
 		return err
 	}
 	defer r.Body.Close()
+	status := r.StatusCode
+	responseData, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+
+	responseString := string(responseData)
+	log.Printf("[INFO] '%s'", responseString)
+	log.Printf("[INFO] " + strconv.Itoa(status))
+	if !check2xx(r.StatusCode) {
+		return errors.New("[DeleteRestrictionRole] Request status: " + strconv.Itoa(status) + " , response: " + responseString)
+	}
+	time.Sleep(8 * time.Second)
 
 	return nil
 }

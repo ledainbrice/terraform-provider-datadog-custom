@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 type Restriction struct {
@@ -91,6 +94,13 @@ func (cl *ClientDatadog) CreateRestrictionQuery(query string, roles []Role) (str
 	}
 	defer r.Body.Close()
 
+	status := r.StatusCode
+
+	log.Printf("[CreateRestrictionQuery] " + strconv.Itoa(status))
+	if status != 200 {
+		return "", errors.New("Request status: " + strconv.Itoa(status))
+	}
+
 	rq := make(map[string]interface{}, 0)
 	err = json.NewDecoder(r.Body).Decode(&rq)
 	if err != nil {
@@ -130,7 +140,16 @@ func (cl *ClientDatadog) UpdateRestrictionQuery(id string, query string, roles [
 	}
 	defer r.Body.Close()
 
+	status := r.StatusCode
+
+	log.Printf("[UpdateRestrictionQuery] " + strconv.Itoa(status))
+	if status != 200 {
+		return errors.New("[UpdateRestrictionQuery] Request status: " + strconv.Itoa(status))
+	}
+	time.Sleep(8 * time.Second)
+
 	current_roles, err := cl.ReadRestrictionRoles(id)
+
 	if err != nil {
 		return err
 	}
@@ -168,6 +187,13 @@ func (cl *ClientDatadog) DeleteRestrictionQuery(id string) error {
 		return err
 	}
 	defer r.Body.Close()
+
+	status := r.StatusCode
+
+	log.Printf("[DeleteRestrictionQuery] " + strconv.Itoa(status))
+	if status != 204 {
+		return errors.New("Request status: " + strconv.Itoa(status))
+	}
 
 	return nil
 }
